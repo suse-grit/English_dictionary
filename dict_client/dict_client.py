@@ -23,35 +23,61 @@ class DictView:
             DictView.__display_1()
             meg = input("请输出命令:").strip()
             if meg == "L":
-                pass
+                self.login()
             elif meg == "R":
-                if self.register():
-                    print("注册成功!")
-                else:
-                    print("注册失败!")
+                self.register()
             elif meg == "q":
                 pass
             else:
                 print("输入的命令有误,请重新输入!")
 
+    def login(self):
+        """
+        客户端登录处理
+        """
+        while True:
+            name = input("请输入你的用户名:")
+            password = input("请输入你的密码(大于6位数):")
+            if len(password) < 6:
+                print("密码位数不够,请重新操作()!")
+                continue
+            elif (" " in name) or (" " in password):
+                print("用户名与密码中有空格存在,请重新操作!")
+                continue
+            data = "L " + name + " " + password
+            self.client.send(data.encode())
+            meg = self.client.recv(1024).decode()
+            if not meg:
+                sys.exit("服务器无响应!")
+            elif meg == "YES":
+                print("登录成功!")
+            else:
+                print("用户不存在,登录失败!")
+            return
+
     def register(self):
         """
         客户端注册处理
         """
-        name = input("请输入用户名:")
-        password = input("请输入注册密码(大于6位数):")
-        if len(password) < 6:
-            print("密码位数不够,请重新操作!")
+        while True:
+            name = input("请输入用户名:")
+            password = input("请输入注册密码(大于6位数):")
+            if len(password) < 6:
+                print("密码位数不够,请重新操作()!")
+                continue
+            elif (" " in name) or (" " in password):
+                print("用户名与密码中有空格存在,请重新操作!")
+                continue
+            data = "R " + name + " " + password
+            self.client.send(data.encode())
+            meg = self.client.recv(1024).decode()
+            if not meg:
+                sys.exit("服务器无响应!")
+            elif meg == "YES":
+                print("注册成功!")
+            else:
+                print("注册失败!")
             return
-        elif " " in name or " " in password:
-            print("用户名与密码中有空格存在,请重新操作!")
-            return
-        data = "R " + name + " " + password
-        self.client.send(data.encode())
-        meg = self.client.recv(1024).decode()
-        if not meg:
-            sys.exit("服务器无响应!")
-        print(meg)
 
     def __select_manu2(self):
         """
