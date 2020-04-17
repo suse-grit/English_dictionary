@@ -6,12 +6,15 @@ from socket import *
 from dict_server.dict_server_db import *
 from multiprocessing import *
 import signal
-import sys
+import sys, os
 
 # 定义全局变量
 HOST = "0.0.0.0"
 PORT = 8888
 ADDR = (HOST, PORT)
+
+# 建立与数据库的连接
+db = Database()
 
 
 class DictServer(Process):
@@ -23,8 +26,31 @@ class DictServer(Process):
         super().__init__()
         self.client = client
 
+    # 总分模式:一个地方负责接受请求,根据请求类型进行任务分发
     def run(self):
-        pass
+        db.create_cur()  # 每个子进程都创建自己的游标对象
+        while True:
+            data = self.client.recv(1024).decode()
+            meg = data.split()
+            if not meg:
+                self.client.close()
+                os._exit(0)
+            elif meg[0] == "R":
+                self.do_register(meg[1], meg[2])
+            elif meg[0] == "L":
+                self.do_login(meg[1], meg[2])
+
+    def do_login(self, name, password):
+        if db.login(name, password):
+            self.client.send(b"YES")
+        else:
+            self.client.send(b"NO")
+
+    def do_register(self, name, password):
+        if db.register(name, password):
+            self.client.send(b"YES")
+        else:
+            self.client.send(b"NO")
 
 
 def main():
