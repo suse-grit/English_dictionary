@@ -14,7 +14,11 @@ class Database:
                           password="123456",
                           database="dict",
                           charset="utf8")
-        # 创建一个游标对象,操作数据库
+
+    def create_cur(self):
+        """
+        创建游标对象
+        """
         self.cur = self.db.cursor()
 
     def close(self):
@@ -24,11 +28,31 @@ class Database:
         self.cur.close()
         self.db.close()
 
-    def find_word(self):
-        pass
+    def register(self, name, password):
+        """
+        数据库处理注册请求
+        :param name: 注册用户名
+        :param password: 注册密码
+        :return: 注册成功:True  注册失败:False
+        """
+        sql = "select name from user where name=%s"
+        self.cur.execute(sql, [name])
+        if self.cur.fetchone():
+            return False
+        else:
+            sql = "insert into user(name,passwd) values(%s,%s) "
+            self.cur.execute(sql, [name, password])
+            self.db.commit()
+            return True
 
-    def login(self):
-        pass
+    def login(self, name, password):
+        sql = "select name from user where name=%s and passwd=%s;"
+        self.cur.execute(sql, [name, password])
+        result = self.cur.fetchone()
+        if result:
+            return True
+        else:
+            return False
 
     def find_history(self):
         pass
