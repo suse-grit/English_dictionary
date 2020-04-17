@@ -23,10 +23,9 @@ class Database:
 
     def close(self):
         """
-        关闭数据库游标对象与数据库
+        关闭数据库游标对象
         """
         self.cur.close()
-        self.db.close()
 
     def register(self, name, password):
         """
@@ -46,6 +45,12 @@ class Database:
             return True
 
     def login(self, name, password):
+        """
+        数据库处理登录请求
+        :param name: 请求登录的用户名
+        :param password: 请求登录的用户名密码
+        :return: 登录成功:True  登录失败:False
+        """
         sql = "select name from user where name=%s and passwd=%s;"
         self.cur.execute(sql, [name, password])
         result = self.cur.fetchone()
@@ -54,5 +59,22 @@ class Database:
         else:
             return False
 
-    def find_history(self):
-        pass
+    def query(self, name, word):
+        self.insert_history(name, word)
+        sql = "select means from dictionary where word=%s"
+        self.cur.execute(sql, [word])
+        r = self.cur.fetchone()
+        if r:
+            return r[0]
+
+    def insert_history(self, name, word):
+        sql = "select id from user where name=%s"
+        self.cur.execute(sql, [name])
+        user_id = self.cur.fetchone()[0]
+        try:
+            sql = "insert into hist( word ,user_id ) values(%s,%s);"
+            self.cur.execute(sql, [word, user_id])
+            self.db.commit()
+        except Exception as e:
+            print(e)
+            self.db.rollback()

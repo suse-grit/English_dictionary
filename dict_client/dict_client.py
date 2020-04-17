@@ -23,11 +23,15 @@ class DictView:
             DictView.__display_1()
             meg = input("请输出命令:").strip()
             if meg == "L":
-                self.login()
+                # 如果登录成功则进入二级界面
+                name = self.login()
+                if name:
+                    self.__select_manu2(name)
             elif meg == "R":
                 self.register()
             elif meg == "q":
-                pass
+                self.client.send(b"q")
+                sys.exit("客户端退出!")
             else:
                 print("输入的命令有误,请重新输入!")
 
@@ -51,9 +55,10 @@ class DictView:
                 sys.exit("服务器无响应!")
             elif meg == "YES":
                 print("登录成功!")
+                return name
             else:
                 print("用户不存在,登录失败!")
-            return
+                return False
 
     def register(self):
         """
@@ -76,18 +81,32 @@ class DictView:
             elif meg == "YES":
                 print("注册成功!")
             else:
-                print("注册失败!")
+                print("用户已存在,注册失败!")
             return
 
-    def __select_manu2(self):
+    def query(self, name):
+        """
+        处理客户端单词查询
+        """
+        while True:
+            word = input("请输入你想要查询的单词(输入'##'可以退出查询):").strip()
+            if word == "##":
+                break
+            data = "Q %s %s" % (name, word)
+            self.client.send(data.encode())
+            # 如果查到单词则返回解释, 如果没有查到, 无论什么结果都打印
+            result = self.client.recv(1024).decode()
+            print(result)
+
+    def __select_manu2(self, name):
         """
         二级界面功能菜单
         """
-        self.__display_2()
         while True:
+            self.__display_2()
             meg = input("请输出命令:").strip()
             if meg == "Q":
-                pass
+                self.query(name)
             elif meg == "H":
                 pass
             elif meg == "E":
@@ -111,7 +130,7 @@ class DictView:
         """
         二级界面提示信息
         """
-        print("""
+        print("""===========   欢迎进入查询界面   ============
         *******   查单词-->Q   *******
         *******   历史记录-->H  *******
         *******   注销-->E      ******

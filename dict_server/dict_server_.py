@@ -32,25 +32,51 @@ class DictServer(Process):
         while True:
             data = self.client.recv(1024).decode()
             meg = data.split()
-            if not meg:
+            if not meg or data == "q":
                 self.client.close()
+                db.close()
                 os._exit(0)
             elif meg[0] == "R":
                 self.do_register(meg[1], meg[2])
             elif meg[0] == "L":
                 self.do_login(meg[1], meg[2])
+            elif meg[0] == "Q":
+                self.do_query(meg[1], meg[2])
 
     def do_login(self, name, password):
+        """
+        处理客户端登录请求
+        :param name: 请求登录的用户名
+        :param password: 请求登录的用户名密码
+        """
         if db.login(name, password):
             self.client.send(b"YES")
         else:
             self.client.send(b"NO")
 
     def do_register(self, name, password):
+        """
+        处理客户端注册请求
+        :param name: 请求注册的用户名
+        :param password: 请求注册的用户密码
+        """
         if db.register(name, password):
             self.client.send(b"YES")
         else:
             self.client.send(b"NO")
+
+    def do_query(self, name, word):
+        """
+        处理客户端单词查询请求
+        :param name: 客户端用户名
+        :param word: 客户端想要查询的单词
+        """
+        mean = db.query(name, word)
+        if mean:
+            data = "{} : {}".format(word, mean)
+        else:
+            data = "单词:{} 未找到!".format(word)
+        self.client.send(data.encode())
 
 
 def main():
@@ -71,6 +97,8 @@ def main():
             con_fd, addr = server_socket.accept()
             print("connect from:", addr)
         except KeyboardInterrupt:
+            db.close()
+            db.cur.close()
             sys.exit("服务器退出!")
         except Exception as e:
             print(e)
