@@ -1,12 +1,19 @@
 """
 向服务端发起请求,展现相应内容
 """
+from socket import *
+import sys
+
+ADDR = ("127.0.0.1", 8888)
 
 
 class DictView:
     """
     在线词典查询单词主界面
     """
+
+    def __init__(self, client):
+        self.client = client
 
     def __select_menu1(self):
         """
@@ -16,13 +23,35 @@ class DictView:
             DictView.__display_1()
             meg = input("请输出命令:").strip()
             if meg == "L":
-                self.__select_manu2()
-            elif meg == "R":
                 pass
+            elif meg == "R":
+                if self.register():
+                    print("注册成功!")
+                else:
+                    print("注册失败!")
             elif meg == "q":
                 pass
             else:
                 print("输入的命令有误,请重新输入!")
+
+    def register(self):
+        """
+        客户端注册处理
+        """
+        name = input("请输入用户名:")
+        password = input("请输入注册密码(大于6位数):")
+        if len(password) < 6:
+            print("密码位数不够,请重新操作!")
+            return
+        elif " " in name or " " in password:
+            print("用户名与密码中有空格存在,请重新操作!")
+            return
+        data = "R " + name + " " + password
+        self.client.send(data.encode())
+        meg = self.client.recv(1024).decode()
+        if not meg:
+            sys.exit("服务器无响应!")
+        print(meg)
 
     def __select_manu2(self):
         """
@@ -63,9 +92,25 @@ class DictView:
         """)
 
     def main(self):
+        print("""
+        ************  欢迎进入在线字典查询界面  ***********
+        """)
         self.__select_menu1()
 
 
+def main():
+    client = socket(AF_INET, SOCK_STREAM)
+    try:
+        client.connect(ADDR)
+        dict_ciew = DictView(client)
+        while True:
+            dict_ciew.main()
+    except KeyboardInterrupt:
+        sys.exit("客户端退出!")
+    except Exception as e:
+        print(e)
+        sys.exit("客户端退出!")
+
+
 if __name__ == '__main__':
-    dict_online = DictView()
-    dict_online.main()
+    main()
