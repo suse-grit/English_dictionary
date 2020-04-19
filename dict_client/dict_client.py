@@ -24,18 +24,18 @@ class DictView:
             meg = input("请输出命令:").strip()
             if meg == "L":
                 # 如果登录成功则进入二级界面
-                name = self.login()
+                name = self.__login()
                 if name:
                     self.__select_manu2(name)
             elif meg == "R":
-                self.register()
+                self.__register()
             elif meg == "q":
-                self.client.send(b"q")
+                self.__client.send(b"q")
                 sys.exit("客户端退出!")
             else:
                 print("输入的命令有误,请重新输入!")
 
-    def login(self):
+    def __login(self):
         """
         客户端登录处理
         """
@@ -43,24 +43,24 @@ class DictView:
             name = input("请输入你的用户名:")
             password = input("请输入你的密码(大于6位数):")
             if len(password) < 6:
-                print("密码位数不够,请重新操作()!")
+                print("密码位数不够,请重新操作!")
                 continue
             elif (" " in name) or (" " in password):
                 print("用户名与密码中有空格存在,请重新操作!")
                 continue
             data = "L " + name + " " + password
-            self.client.send(data.encode())
-            meg = self.client.recv(1024).decode()
+            self.__client.send(data.encode())
+            meg = self.__client.recv(1024).decode()
             if not meg:
                 sys.exit("服务器无响应!")
             elif meg == "YES":
                 print("登录成功!")
                 return name
             else:
-                print("用户不存在,登录失败!")
+                print("用户名不存在或密码错误,登录失败!")
                 return False
 
-    def register(self):
+    def __register(self):
         """
         客户端注册处理
         """
@@ -74,8 +74,8 @@ class DictView:
                 print("用户名与密码中有空格存在,请重新操作!")
                 continue
             data = "R " + name + " " + password
-            self.client.send(data.encode())
-            meg = self.client.recv(1024).decode()
+            self.__client.send(data.encode())
+            meg = self.__client.recv(1024).decode()
             if not meg:
                 sys.exit("服务器无响应!")
             elif meg == "YES":
@@ -84,7 +84,7 @@ class DictView:
                 print("用户已存在,注册失败!")
             return
 
-    def query(self, name):
+    def __query(self, name):
         """
         处理客户端单词查询
         """
@@ -92,11 +92,27 @@ class DictView:
             word = input("请输入你想要查询的单词(输入'##'可以退出查询):").strip()
             if word == "##":
                 break
+            if not word:
+                print("输入的单词为空,请重新输入!")
+                continue
             data = "Q %s %s" % (name, word)
-            self.client.send(data.encode())
+            self.__client.send(data.encode())
             # 如果查到单词则返回解释, 如果没有查到, 无论什么结果都打印
-            result = self.client.recv(1024).decode()
+            result = self.__client.recv(1024).decode()
             print(result)
+
+    def __history(self, name):
+        """
+        查看单词查询的历史记录
+        :param name: 查询历史记录的用户名
+        """
+        data = "H " + name
+        self.__client.send(data.encode())
+        while True:
+            meg = self.__client.recv(1024).decode()
+            if meg == "##":
+                break
+            print(meg)
 
     def __select_manu2(self, name):
         """
@@ -106,9 +122,9 @@ class DictView:
             self.__display_2()
             meg = input("请输出命令:").strip()
             if meg == "Q":
-                self.query(name)
+                self.__query(name)
             elif meg == "H":
-                pass
+                self.__history(name)
             elif meg == "E":
                 break
             else:

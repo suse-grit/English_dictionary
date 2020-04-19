@@ -5,6 +5,7 @@
 from socket import *
 from dict_server.dict_server_db import *
 from multiprocessing import *
+from time import sleep
 import signal
 import sys, os
 
@@ -42,6 +43,20 @@ class DictServer(Process):
                 self.do_login(meg[1], meg[2])
             elif meg[0] == "Q":
                 self.do_query(meg[1], meg[2])
+            elif meg[0] == "H":
+                self.do_history(meg[1])
+
+    def do_history(self, name):
+        """
+        处理客户端历史记录查询请求
+        :param name: 客户端用户名
+        """
+        result = db.history(name)
+        for name, word, time in result:
+            data = "用户:{} 在{} 查询了单词:{}".format(name, time, word)
+            self.client.send(data.encode())
+            sleep(0.1)
+        self.client.send(b"##")
 
     def do_login(self, name, password):
         """
@@ -97,8 +112,6 @@ def main():
             con_fd, addr = server_socket.accept()
             print("connect from:", addr)
         except KeyboardInterrupt:
-            db.close()
-            db.cur.close()
             sys.exit("服务器退出!")
         except Exception as e:
             print(e)
